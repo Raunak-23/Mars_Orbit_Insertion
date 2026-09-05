@@ -1,0 +1,6 @@
+trial,seq_len,hidden_dim,num_layers,dropout,lr,bidirectional,architecture,train_pinball,val_pinball,gen_gap,selection_score,best_epoch,is_best
+1,30,64,1,0.1,0.001,False,Causal,0.08901,1.09962,1.01061,3.43642,14,False
+2,30,128,2,0.2,0.001,False,Causal,0.08887,0.92232,0.83345,2.60197,8,False
+3,60,64,1,0.1,0.001,False,Causal,0.08605,1.16477,1.07872,3.85065,18,False
+4,60,128,2,0.2,0.001,False,Causal,0.08632,0.68888,0.60257,1.68568,29,False
+5,60,128,2,0.25,0.0005,False,Causal,0.08824,0.87301,0.78477,2.39729,30,False
