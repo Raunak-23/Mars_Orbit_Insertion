@@ -5,14 +5,25 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "joblib>=1.6.0",
     "matplotlib>=3.11.1",
     "numpy>=2.5.2",
     "pandas>=3.0.5",
+    "quantile-forest>=1.4.2",
+    "scikit-learn>=1.9.0",
     "scipy>=1.18.1",
     "seaborn>=0.13.2",
+    "tabulate>=0.10.0",
+    "torch>=2.14.0",
 ]
 
 [dependency-groups]
 dev = [
     "ipykernel>=7.3.0",
+    "nbclient>=0.11.0",
+    "nbformat>=5.11.1",
 ]
+
+[tool.pyright]
+extraPaths = ["."]
+
