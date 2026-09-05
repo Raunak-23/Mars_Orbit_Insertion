@@ -59,6 +59,33 @@ def main():
       help="Optional path to telemetry CSV dataset",
   )
 
+  # Dual-Model Onboard Streaming Arguments
+  parser.add_argument(
+      "--demo-dual",
+      "--stream-onboard",
+      dest="demo_dual",
+      action="store_true",
+      help="Run simultaneous dual-model (QRF + LSTM) onboard streaming telemetry pipeline demo",
+  )
+  parser.add_argument(
+      "--stream-steps",
+      type=int,
+      default=10,
+      help="Number of 1-second telemetry steps to stream during dual-model demo (default: 10)",
+  )
+  parser.add_argument(
+      "--stream-start",
+      type=int,
+      default=1255,
+      help="Starting elapsed second for dual-model stream replay (default: 1255, entering LAM burn)",
+  )
+  parser.add_argument(
+      "--stream-delay",
+      type=float,
+      default=0.4,
+      help="Delay between streamed packets in seconds (default: 0.4s)",
+  )
+
   # LSTM Arguments
   parser.add_argument(
       "--lstm",
@@ -131,6 +158,16 @@ def main():
     run_eda()
     print("EDA Visualizations generated successfully.")
 
+  if args.demo_dual:
+    from src.dual_streaming_pipeline import run_onboard_streaming_simulation
+    run_onboard_streaming_simulation(
+        dataset_path=args.dataset,
+        start_sec=args.stream_start,
+        num_steps=args.stream_steps,
+        delay_sec=args.stream_delay,
+    )
+    return
+
   if args.demo_inference:
     demo_inference()
     return
@@ -197,6 +234,7 @@ def main():
   # Default to running QRF workflow if explicitly requested or if no other primary action is given
   run_default_qrf = args.qrf or (
       not args.eda
+      and not args.demo_dual
       and not args.demo_inference
       and not args.demo_lstm
       and not args.rolling_val
