@@ -62,9 +62,9 @@ Standard machine learning models deliver single scalar point forecasts ($\hat{y}
    Standard decision trees cannot predict values outside the convex hull of their training data. When the spacecraft accelerates into high-altitude post-burn ascent ($> 9000\text{ km}$), an un-differenced tree flatlines, causing catastrophic errors ($> 3900\text{ m}$). 
    - *Solution*: We reformulate the prediction target into a **second-order kinematic residual** relative to instantaneous vertical velocity:
 
-     ```math
+     $$
      \Delta h_{\text{residual}} = h_{t+k} - \left( h_t + \dot{h}_t \cdot k + \frac{1}{2} \ddot{h}_t \cdot k^2 \right)
-     ```
+     $$
 
    - This transforms an unbounded non-stationary trajectory into a strictly stationary distribution ($[-3\text{ m}, +4\text{ m}]$), slashing altitude test MAE from $> 3900\text{ m}$ down to **$0.56\text{ km}$**.
 
@@ -112,9 +112,9 @@ Implemented in [`src/qrf_pipeline.py`](src/qrf_pipeline.py):
 Implemented in [`src/train_eval_qrf.py`](src/train_eval_qrf.py) & [`src/qrf_tuning.py`](src/qrf_tuning.py):
 - Builds non-parametric conditional cumulative distribution functions (CDFs):
 
-  ```math
+  $$
   \hat{F}(y \mid X = x) = \sum_{i=1}^n w_i(x) \cdot \mathbb{I}(Y_i \le y)
-  ```
+  $$
 
 - Predicts 7 quantiles simultaneously: $\tau \in \{0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95\}$.
 - Point forecast is derived from the conditional median ($\tau = 0.50$).
@@ -144,15 +144,15 @@ Implemented in [`src/lstm_model.py`](src/lstm_model.py) & [`src/lstm_training.py
 
 - **Objective Function**: Asymmetric Multi-Quantile Pinball Loss (Tilted Loss):
 
-  ```math
+  $$
   \mathcal{L}_\tau(y, \hat{y}_\tau) = \max \left( \tau (y - \hat{y}_\tau), \, (1 - \tau)(\hat{y}_\tau - y) \right)
-  ```
+  $$
 
 - **Quantile Monotonicity Regularization**: Penalizes quantile crossing violations to strictly enforce non-crossing monotonicity ($\hat{q}_{\tau_a} \le \hat{q}_{\tau_b}$ for any quantile levels $\tau_a < \tau_b$):
 
-  ```math
+  $$
   \mathcal{L}_{\text{crossing}} = \sum_{\tau_a < \tau_b} \max\left(0, \, \hat{y}_{\tau_a} - \hat{y}_{\tau_b}\right)
-  ```
+  $$
 
 - **Training Mechanics**: AdamW optimizer, Cosine Annealing learning rate schedule, gradient norm clipping ($\le 1.0$), and early stopping on validation pinball loss.
 
@@ -171,9 +171,9 @@ Implemented in [`src/dual_streaming_pipeline.py`](src/dual_streaming_pipeline.py
 - **Consensus & Cross-Verification Safety System**:
   - Computes an ensemble consensus median and fused 90% confidence envelope:
 
-    ```math
+    $$
     \hat{y}_{\text{consensus}} = \frac{\hat{y}_{\text{QRF}} + \hat{y}_{\text{LSTM}}}{2}, \quad \text{CI}_{90}^{\text{fused}} = \left[ \min\left(q_{0.05}^{\text{QRF}}, q_{0.05}^{\text{LSTM}}\right), \, \max\left(q_{0.95}^{\text{QRF}}, q_{0.95}^{\text{LSTM}}\right) \right]
-    ```
+    $$
 
   - Cross-verifies model agreement and flags health status: `NOMINAL (CONCURRENT)`, `MONITORING (DIVERGENCE)`, or `ALERT (CROSS-MODEL MISMATCH)`.
   - Provides real-time attitude tracking (Roll, Pitch, Yaw) alongside flight altitude and magnetic heading.
