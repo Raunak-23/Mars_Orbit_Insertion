@@ -87,9 +87,9 @@ The dataset (`data/mangalyaan_mars_orbit_insertion_simulated.csv`) captures 3,60
 
 | Phase ID | Phase Name | Time Range | Dynamic Characteristics |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | **Pre-Burn Approach** | $0\text{ s} \le t < 1260\text{ s}$ | High velocity, solar radiation pressure, optical attitude acquisition, quiet thrusters. |
-| **Phase 2** | **LAM Main Engine Burn** | $1260\text{ s} \le t < 2700\text{ s}$ | Active 440 N LAM firing, high propellant depletion, intense chamber pressure, periapsis dip (&lt; 500 km). |
-| **Phase 3** | **Post-Burn Orbital Ascent** | $2700\text{ s} \le t \le 3600\text{ s}$ | Engine shutdown, cooling engine bell, orbital ascent, confirmation of elliptical capture. |
+| **Phase 1** | **Pre-Burn Approach** | 0 s &le; t &lt; 1260 s | High velocity, solar radiation pressure, optical attitude acquisition, quiet thrusters. |
+| **Phase 2** | **LAM Main Engine Burn** | 1260 s &le; t &lt; 2700 s | Active 440 N LAM firing, high propellant depletion, intense chamber pressure, periapsis dip (&lt; 500 km). |
+| **Phase 3** | **Post-Burn Orbital Ascent** | 2700 s &le; t &le; 3600 s | Engine shutdown, cooling engine bell, orbital ascent, confirmation of elliptical capture. |
 
 ### Telemetry Channels Analyzed
 - **Target Channels**:
@@ -170,7 +170,11 @@ Implemented in [`src/dual_streaming_pipeline.py`](src/dual_streaming_pipeline.py
 - **Concurrent Threading**: Executes both the **Quantile Random Forest** (kinematic tree ensemble) and the **Multi-Horizon Quantile LSTM** (deep sequence model) in parallel threads via `ThreadPoolExecutor`, demonstrating concurrent real-time execution within the 1-second onboard compute budget.
 - **Consensus & Cross-Verification Safety System**:
   - Computes an ensemble consensus median and fused 90% confidence envelope:
-    $$\hat{y}_{\text{consensus}} = \frac{\hat{y}_{\text{QRF}} + \hat{y}_{\text{LSTM}}}{2}, \quad \text{CI}_{90}^{\text{fused}} = \left[ \min(q_{0.05}^{\text{QRF}}, q_{0.05}^{\text{LSTM}}), \, \max(q_{0.95}^{\text{QRF}}, q_{0.95}^{\text{LSTM}}) \right]$$
+
+    ```math
+    \hat{y}_{\text{consensus}} = \frac{\hat{y}_{\text{QRF}} + \hat{y}_{\text{LSTM}}}{2}, \quad \text{CI}_{90}^{\text{fused}} = \left[ \min\left(q_{0.05}^{\text{QRF}}, q_{0.05}^{\text{LSTM}}\right), \, \max\left(q_{0.95}^{\text{QRF}}, q_{0.95}^{\text{LSTM}}\right) \right]
+    ```
+
   - Cross-verifies model agreement and flags health status: `NOMINAL (CONCURRENT)`, `MONITORING (DIVERGENCE)`, or `ALERT (CROSS-MODEL MISMATCH)`.
   - Provides real-time attitude tracking (Roll, Pitch, Yaw) alongside flight altitude and magnetic heading.
 
