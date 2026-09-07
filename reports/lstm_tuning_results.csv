@@ -6,3 +6,4 @@ trial,seq_len,hidden_dim,num_layers,dropout,lr,bidirectional,architecture,train_
 5,60,128,2,0.25,0.0005,False,Causal,0.08824,0.87301,0.78477,2.39729,30,False
 6,60,192,2,0.25,0.001,False,Causal,0.08553,0.65164,0.56611,1.55721,21,False
 7,120,128,2,0.2,0.001,False,Causal,0.08934,1.18165,1.09231,3.85064,5,False
+8,60,128,2,0.2,0.001,True,BiLSTM,0.08956,0.65336,0.5638,1.52776,22,True

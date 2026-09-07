@@ -1,0 +1,12 @@
+{
+  "seq_len": 60,
+  "hidden_dim": 128,
+  "num_layers": 2,
+  "dropout": 0.2,
+  "lr": 0.001,
+  "bidirectional": true,
+  "best_epoch": 22,
+  "val_pinball": 0.65336,
+  "train_pinball": 0.08956,
+  "selection_score": 1.52776
+}
