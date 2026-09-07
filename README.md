@@ -59,14 +59,13 @@ Standard machine learning models deliver single scalar point forecasts ($\hat{y}
 ## 💡 Key Engineering Innovations
 
 1. **Resolving Decision Tree Extrapolation Failure for Altitude (`TOF_Alt`)**:
-   Standard decision trees cannot predict values outside the convex hull of their training data. When the spacecraft accelerates into high-altitude post-burn ascent ($> 9000\text{ km}$), an un-differenced tree flatlines, causing catastrophic errors ($> 3900\text{ m}$). 
-   - *Solution*: We reformulate the prediction target into a **second-order kinematic residual** relative to instantaneous vertical velocity:
+   Standard decision trees cannot predict values outside the convex hull of their training data. When the spacecraft accelerates into high-altitude post-burn ascent ($> 9000\text{ km}$), an un-differenced tree flatlines, causing catastrophic errors ($> 3900\text{ m}$). We reformulate the prediction target into a **second-order kinematic residual** relative to instantaneous vertical velocity:
 
-     $$
-     \Delta h_{\text{residual}} = h_{t+k} - \left( h_t + \dot{h}_t \cdot k + \frac{1}{2} \ddot{h}_t \cdot k^2 \right)
-     $$
+```math
+\Delta h_{\text{residual}} = h_{t+k} - \left( h_t + \dot{h}_t \cdot k + \frac{1}{2} \ddot{h}_t \cdot k^2 \right)
+```
 
-   - This transforms an unbounded non-stationary trajectory into a strictly stationary distribution ($[-3\text{ m}, +4\text{ m}]$), slashing altitude test MAE from $> 3900\text{ m}$ down to **$0.56\text{ km}$**.
+   This transforms an unbounded non-stationary trajectory into a strictly stationary distribution ($[-3\text{ m}, +4\text{ m}]$), slashing altitude test MAE from $> 3900\text{ m}$ down to **$0.56\text{ km}$**.
 
 2. **Dual-Model Concurrent Avionics Architecture**:
    - **Quantile Random Forest (QRF)**: Delivers fast, non-parametric conditional quantile estimates with zero distribution assumptions.
@@ -112,9 +111,9 @@ Implemented in [`src/qrf_pipeline.py`](src/qrf_pipeline.py):
 Implemented in [`src/train_eval_qrf.py`](src/train_eval_qrf.py) & [`src/qrf_tuning.py`](src/qrf_tuning.py):
 - Builds non-parametric conditional cumulative distribution functions (CDFs):
 
-  $$
-  \hat{F}(y \mid X = x) = \sum_{i=1}^n w_i(x) \cdot \mathbb{I}(Y_i \le y)
-  $$
+```math
+\hat{F}(y \mid X = x) = \sum_{i=1}^{n} w_i(x) \cdot \mathbb{I}(Y_i \le y)
+```
 
 - Predicts 7 quantiles simultaneously: $\tau \in \{0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95\}$.
 - Point forecast is derived from the conditional median ($\tau = 0.50$).
@@ -144,15 +143,15 @@ Implemented in [`src/lstm_model.py`](src/lstm_model.py) & [`src/lstm_training.py
 
 - **Objective Function**: Asymmetric Multi-Quantile Pinball Loss (Tilted Loss):
 
-  $$
-  \mathcal{L}_\tau(y, \hat{y}_\tau) = \max \left( \tau (y - \hat{y}_\tau), \, (1 - \tau)(\hat{y}_\tau - y) \right)
-  $$
+```math
+\mathcal{L}_\tau(y, \hat{y}_\tau) = \max \left( \tau (y - \hat{y}_\tau), \; (1 - \tau)(\hat{y}_\tau - y) \right)
+```
 
-- **Quantile Monotonicity Regularization**: Penalizes quantile crossing violations to strictly enforce non-crossing monotonicity ($\hat{q}_{\tau_a} \le \hat{q}_{\tau_b}$ for any quantile levels $\tau_a < \tau_b$):
+- **Quantile Monotonicity Regularization**: Penalizes quantile crossing violations to strictly enforce non-crossing monotonicity ($\hat{q}_{\tau_a} \le \hat{q}_{\tau_b}$ for any quantile levels $\tau_a \lt \tau_b$):
 
-  $$
-  \mathcal{L}_{\text{crossing}} = \sum_{\tau_a < \tau_b} \max\left(0, \, \hat{y}_{\tau_a} - \hat{y}_{\tau_b}\right)
-  $$
+```math
+\mathcal{L}_{\text{crossing}} = \sum_{\tau_a \lt \tau_b} \max\left(0, \; \hat{y}_{\tau_a} - \hat{y}_{\tau_b}\right)
+```
 
 - **Training Mechanics**: AdamW optimizer, Cosine Annealing learning rate schedule, gradient norm clipping ($\le 1.0$), and early stopping on validation pinball loss.
 
@@ -171,9 +170,9 @@ Implemented in [`src/dual_streaming_pipeline.py`](src/dual_streaming_pipeline.py
 - **Consensus & Cross-Verification Safety System**:
   - Computes an ensemble consensus median and fused 90% confidence envelope:
 
-    $$
-    \hat{y}_{\text{consensus}} = \frac{\hat{y}_{\text{QRF}} + \hat{y}_{\text{LSTM}}}{2}, \quad \text{CI}_{90}^{\text{fused}} = \left[ \min\left(q_{0.05}^{\text{QRF}}, q_{0.05}^{\text{LSTM}}\right), \, \max\left(q_{0.95}^{\text{QRF}}, q_{0.95}^{\text{LSTM}}\right) \right]
-    $$
+```math
+\hat{y}_{\text{consensus}} = \frac{\hat{y}_{\text{QRF}} + \hat{y}_{\text{LSTM}}}{2}, \quad \text{CI}_{90}^{\text{fused}} = \left[ \min\left(q_{0.05}^{\text{QRF}},\; q_{0.05}^{\text{LSTM}}\right),\; \max\left(q_{0.95}^{\text{QRF}},\; q_{0.95}^{\text{LSTM}}\right) \right]
+```
 
   - Cross-verifies model agreement and flags health status: `NOMINAL (CONCURRENT)`, `MONITORING (DIVERGENCE)`, or `ALERT (CROSS-MODEL MISMATCH)`.
   - Provides real-time attitude tracking (Roll, Pitch, Yaw) alongside flight altitude and magnetic heading.
@@ -246,72 +245,17 @@ The repository includes three self-contained, fully documented walkthrough noteb
 
 ```text
 mars_projection/
-├── data/
-│   └── mangalyaan_mars_orbit_insertion_simulated.csv   # 1 Hz MOI simulated telemetry
-├── models/
-│   ├── best_hyperparameters.json                       # Tuned QRF hyperparameters
-│   ├── best_lstm_hyperparameters.json                  # Tuned LSTM hyperparameters
-│   ├── best_lstm_telemetry_model.pt                    # Trained PyTorch Quantile LSTM weights
-│   ├── lstm_config.json                                # LSTM architecture configuration
-│   ├── lstm_scaler.joblib                              # Zero-leakage standard scaler
-│   ├── qrf_Mag_heading_h1.joblib                       # Saved QRF models for each target & horizon
-│   ├── qrf_Mag_heading_h3.joblib
-│   ├── qrf_Mag_heading_h5.joblib
-│   ├── qrf_TOF_Alt_h1.joblib
-│   ├── qrf_TOF_Alt_h3.joblib
-│   └── qrf_TOF_Alt_h5.joblib
-├── notebook/
-│   ├── 01_eda_mangalyaan_telemetry.ipynb               # Exploratory Data Analysis notebook
-│   ├── 02_quantile_random_forest_telemetry.ipynb       # QRF development & tuning notebook
-│   └── 03_lstm_telemetry_prediction.ipynb              # Deep Quantile LSTM notebook
+├── data/                 # 1 Hz MOI simulated telemetry CSV (3600 s)
+├── models/               # Trained model weights, scalers, configs & tuned hyperparameters
+├── notebook/             # 3 interactive Jupyter notebooks (EDA → QRF → LSTM)
 ├── reports/
-│   ├── figures/                                        # Publication-quality figures & charts
-│   │   ├── correlation_heatmaps.png
-│   │   ├── lstm_horizon_metrics_comparison.png
-│   │   ├── lstm_hyperparameter_tuning_tradeoffs.png
-│   │   ├── lstm_loss_convergence.png
-│   │   ├── lstm_prediction_intervals_test.png
-│   │   ├── lstm_residuals_distribution.png
-│   │   ├── moi_mission_overview.png
-│   │   ├── orbital_physics_relationships.png
-│   │   ├── phase_distributions_boxplots.png
-│   │   ├── qrf_Mag_heading_residual_distribution.png
-│   │   ├── qrf_Mag_heading_trajectory_intervals.png
-│   │   ├── qrf_TOF_Alt_residual_distribution.png
-│   │   ├── qrf_TOF_Alt_trajectory_intervals.png
-│   │   ├── qrf_horizon_metrics_comparison.png
-│   │   ├── qrf_hyperparameter_tuning_tradeoffs.png
-│   │   └── qrf_rolling_validation_dynamics.png
-│   ├── qrf_metrics_summary.csv                         # QRF point & quantile test metrics
-│   ├── qrf_predictions_test.csv                        # QRF test predictions across all quantiles
-│   ├── qrf_rolling_metrics.csv                         # Walk-forward cross-validation metrics
-│   ├── qrf_tuning_results.csv                          # QRF hyperparameter search log
-│   ├── lstm_metrics_summary.csv                        # LSTM multi-target test metrics
-│   ├── lstm_predictions_test.csv                       # LSTM multi-horizon test predictions
-│   └── lstm_tuning_results.csv                         # LSTM hyperparameter trial history
-├── src/
-│   ├── __init__.py                                     # Package designation
-│   ├── eda_analysis.py                                 # Core statistical EDA engine
-│   ├── generate_eda_visualizations.py                  # EDA figure generation script
-│   ├── qrf_pipeline.py                                 # Feature engineering & QRF pipeline
-│   ├── qrf_evaluation.py                               # Point, Pinball, PICP & MPIW metrics
-│   ├── qrf_tuning.py                                   # Generalization-penalized RandomizedSearchCV
-│   ├── qrf_inference.py                                # Streaming QRF inference engine
-│   ├── rolling_validation.py                           # Expanding-window temporal CV
-│   ├── train_eval_qrf.py                               # End-to-end QRF training runner
-│   ├── lstm_dataset.py                                 # Sequence lookback generator & scaling
-│   ├── lstm_model.py                                   # Multi-Horizon Quantile LSTM network
-│   ├── lstm_training.py                                # PyTorch training loop & pinball loss
-│   ├── lstm_evaluation.py                              # Multi-target LSTM evaluation suite
-│   ├── lstm_tuning.py                                  # LSTM hyperparameter search runner
-│   ├── lstm_inference.py                               # Streaming LSTM inference engine
-│   ├── train_eval_lstm.py                              # End-to-end LSTM training runner
-│   └── dual_streaming_pipeline.py                      # Simultaneous dual-model onboard runner
-├── main.py                                             # Unified CLI entrypoint
-├── LICENSE                                             # MIT open-source license
-├── pyproject.toml                                      # Project metadata & dependencies
-├── pyrightconfig.json                                  # LSP / Pyright search path configuration
-└── uv.lock                                             # Pinned lockfile for exact reproducibility
+│   ├── figures/          # Publication-quality diagnostic plots (QRF + LSTM)
+│   └── *.csv             # Test metrics, predictions, tuning logs, rolling validation
+├── src/                  # All pipeline source code (feature eng, models, eval, streaming)
+├── main.py               # Unified CLI entrypoint
+├── LICENSE               # MIT
+├── pyproject.toml        # Dependencies & project metadata
+└── uv.lock               # Pinned lockfile for reproducibility
 ```
 
 ---
