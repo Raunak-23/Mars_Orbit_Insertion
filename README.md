@@ -207,15 +207,15 @@ Evaluated across 8 channels simultaneously on holdout sequences:
 
 | Target Channel | Horizon | MAE | RMSE | $R^2$ Score | Pinball Loss | 90% PICP | 90% MPIW |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **`angle roll`** | $t+1\text{s}$ | **0.0938°** | 0.1173° | **0.9935** | 0.0276 | **96.64%** | 0.496° |
-| **`pitch`** | $t+1\text{s}$ | **0.1174°** | 0.1456° | **0.8728** | 0.0303 | **94.58%** | 0.491° |
-| **`yaw`** | $t+1\text{s}$ | **0.1160°** | 0.1458° | **0.9126** | 0.0341 | **92.90%** | 0.548° |
-| **`Magy`** | $t+1\text{s}$ | **0.1633** | 0.2037 | **0.8060** | 0.0502 | **98.69%** | 1.031 |
-| **`Magx`** | $t+1\text{s}$ | **0.1780** | 0.2219 | -1.0748 | 0.0509 | **93.27%** | 0.818 |
-| **`Magz`** | $t+1\text{s}$ | **0.1133** | 0.1446 | -0.9656 | 0.0340 | **94.58%** | 0.570 |
-| **`angle roll`** | $t+5\text{s}$ | **0.1188°** | 0.1473° | **0.9897** | 0.0330 | **95.33%** | 0.605° |
-| **`pitch`** | $t+5\text{s}$ | **0.1016°** | 0.1308° | **0.8919** | 0.0302 | **96.07%** | 0.583° |
-| **`yaw`** | $t+5\text{s}$ | **0.1130°** | 0.1410° | **0.9210** | 0.0351 | **95.89%** | 0.791° |
+| **`angle roll`** | $t+1\text{s}$ | **0.0929°** | 0.1160° | **0.9937** | 0.0270 | **93.08%** | 0.475° |
+| **`pitch`** | $t+1\text{s}$ | **0.0995°** | 0.1252° | **0.9059** | 0.0286 | **85.05%** | 0.357° |
+| **`yaw`** | $t+1\text{s}$ | **0.1165°** | 0.1470° | **0.9112** | 0.0337 | **92.52%** | 0.526° |
+| **`Magy`** | $t+1\text{s}$ | **0.1667** | 0.2077 | **0.7984** | 0.0474 | **89.16%** | 0.687 |
+| **`Magx`** | $t+1\text{s}$ | **0.1805** | 0.2251 | -1.1348 | 0.0513 | **91.96%** | 0.788 |
+| **`Magz`** | $t+1\text{s}$ | **0.1142** | 0.1464 | -1.0140 | 0.0345 | **94.95%** | 0.592 |
+| **`angle roll`** | $t+5\text{s}$ | **0.1151°** | 0.1419° | **0.9904** | 0.0327 | **93.83%** | 0.474° |
+| **`pitch`** | $t+5\text{s}$ | **0.1002°** | 0.1257° | **0.9002** | 0.0296 | **95.51%** | 0.561° |
+| **`yaw`** | $t+5\text{s}$ | **0.1220°** | 0.1513° | **0.9089** | 0.0371 | **99.44%** | 0.834° |
 
 > **Key Finding**: The LSTM excels at Euler angle predictions (`roll`, `pitch`, `yaw`) with $R^2 \ge 0.87 - 0.99$ and calibrated coverage exceeding $92\% - 96\%$, successfully modeling high-frequency thruster-induced attitude adjustments.
 
@@ -250,6 +250,7 @@ mars_projection/
 │   └── mangalyaan_mars_orbit_insertion_simulated.csv   # 1 Hz MOI simulated telemetry
 ├── models/
 │   ├── best_hyperparameters.json                       # Tuned QRF hyperparameters
+│   ├── best_lstm_hyperparameters.json                  # Tuned LSTM hyperparameters
 │   ├── best_lstm_telemetry_model.pt                    # Trained PyTorch Quantile LSTM weights
 │   ├── lstm_config.json                                # LSTM architecture configuration
 │   ├── lstm_scaler.joblib                              # Zero-leakage standard scaler
@@ -266,6 +267,11 @@ mars_projection/
 ├── reports/
 │   ├── figures/                                        # Publication-quality figures & charts
 │   │   ├── correlation_heatmaps.png
+│   │   ├── lstm_horizon_metrics_comparison.png
+│   │   ├── lstm_hyperparameter_tuning_tradeoffs.png
+│   │   ├── lstm_loss_convergence.png
+│   │   ├── lstm_prediction_intervals_test.png
+│   │   ├── lstm_residuals_distribution.png
 │   │   ├── moi_mission_overview.png
 │   │   ├── orbital_physics_relationships.png
 │   │   ├── phase_distributions_boxplots.png
@@ -302,6 +308,7 @@ mars_projection/
 │   ├── train_eval_lstm.py                              # End-to-end LSTM training runner
 │   └── dual_streaming_pipeline.py                      # Simultaneous dual-model onboard runner
 ├── main.py                                             # Unified CLI entrypoint
+├── LICENSE                                             # MIT open-source license
 ├── pyproject.toml                                      # Project metadata & dependencies
 ├── pyrightconfig.json                                  # LSP / Pyright search path configuration
 └── uv.lock                                             # Pinned lockfile for exact reproducibility
@@ -410,6 +417,11 @@ The pipeline generates publication-ready figures saved in [`reports/figures/`](r
 - **Residual Error Distributions**: [`qrf_TOF_Alt_residual_distribution.png`](reports/figures/qrf_TOF_Alt_residual_distribution.png) & [`qrf_Mag_heading_residual_distribution.png`](reports/figures/qrf_Mag_heading_residual_distribution.png) — Normality checks and quantile coverage calibration histograms.
 - **Hyperparameter Optimization Trade-Offs**: [`qrf_hyperparameter_tuning_tradeoffs.png`](reports/figures/qrf_hyperparameter_tuning_tradeoffs.png) — Train vs. validation error surfaces demonstrating elimination of tree memorization.
 - **Rolling Validation Dynamics**: [`qrf_rolling_validation_dynamics.png`](reports/figures/qrf_rolling_validation_dynamics.png) — Calibration stability and interval sharpness across sequential flight phases.
+- **LSTM Loss Convergence**: [`lstm_loss_convergence.png`](reports/figures/lstm_loss_convergence.png) — Training and validation multi-quantile pinball loss trajectories with early stopping checkpoint.
+- **LSTM Prediction Intervals**: [`lstm_prediction_intervals_test.png`](reports/figures/lstm_prediction_intervals_test.png) — Multi-target holdout sequence predictions with synchronized 90% quantile bands ($q_{0.05} \leftrightarrow q_{0.95}$).
+- **LSTM Residual Distributions**: [`lstm_residuals_distribution.png`](reports/figures/lstm_residuals_distribution.png) — Multi-channel residual error distributions demonstrating zero bias and bounded variance.
+- **LSTM Horizon Metrics Comparison**: [`lstm_horizon_metrics_comparison.png`](reports/figures/lstm_horizon_metrics_comparison.png) — MAE, RMSE, and pinball loss progression across $t+1\text{s}$, $t+3\text{s}$, and $t+5\text{s}$ forecast steps.
+- **LSTM Hyperparameter Tuning Surface**: [`lstm_hyperparameter_tuning_tradeoffs.png`](reports/figures/lstm_hyperparameter_tuning_tradeoffs.png) — Validation loss trade-offs across hidden dimensions, layer depths, sequence lengths, and bidirectionality.
 
 ---
 
